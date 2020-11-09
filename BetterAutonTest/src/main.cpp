@@ -20,7 +20,6 @@
 // ---- END VEXCODE CONFIGURED DEVICES ----
 
 #include "vex.h"
-#include "math.h"
 
 using namespace vex;
 
@@ -28,18 +27,18 @@ int xPos = 0;
 int yPos = 0;
 int yawValue = 0;
 
-void moveTo(int x, int y) {
+void moveTo(int x, int y, float speed) {
   //calculating motor speeds and direction
-  double yawModifier = 1; //this is for the inertial sensor not giving the right numbers to be fed into the system
+  double yawModifier = 1; //this is for the inertial sensor not giving the right numbers to be fed into the system (depending on the position of the inertial sensor on the robot)
 
   double xValue = cos(yawValue / yawModifier) + (x - xPos);
   double yValue = sin(yawValue / yawModifier) + (y - yPos);
 
   //applying those values to the motors
-  double frontLeft = (double)(yValue + xValue * .5);
-  double backLeft = (double)(yValue - xValue * .5);
-  double frontRight = (double)(yValue - xValue * .5);
-  double backRight = (double)(yValue + xValue * .5);
+  double frontLeft = (double)(yValue + xValue * speed);
+  double backLeft = (double)(yValue - xValue * speed);
+  double frontRight = (double)(yValue - xValue * speed);
+  double backRight = (double)(yValue + xValue * speed);
 
   vertencoder.setPosition(0, degrees);
   strafeencoder.setPosition(0, degrees);
@@ -49,15 +48,18 @@ void moveTo(int x, int y) {
   rightfront.setVelocity(frontRight, vex::velocityUnits::pct);
   rightback.setVelocity(backRight, vex::velocityUnits::pct);
 
-  while(abs(xPos-x) < 2 && abs(yPos-y) < 2) {
+  int startPosX = xPos;
+  int startPosY = yPos;
+
+  do {
     leftfront.spin(forward);
     leftback.spin(forward);
     rightfront.spin(forward);
     rightback.spin(forward);
-  }
 
-  xPos += strafeencoder.position(degrees);
-  yPos += vertencoder.position(degrees);
+    yPos = strafeencoder.position(degrees) + startPosY;
+    xPos = vertencoder.position(degrees) + startPosX;
+  } while(abs(xPos-x) < 2 && abs(yPos-y) < 2);
 
   leftfront.stop();
   leftback.stop();
@@ -77,7 +79,7 @@ void rightinertialturn(double goaldegrees)
   leftback.setVelocity(40, vex::velocityUnits::pct);
   rightfront.setVelocity(40, vex::velocityUnits::pct);
   rightback.setVelocity(40, vex::velocityUnits::pct);
-    
+  
   while(inertia.rotation(degrees) < goaldegrees)
   {
     leftfront.spin(forward);
