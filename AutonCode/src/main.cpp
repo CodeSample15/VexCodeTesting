@@ -1,8 +1,9 @@
+  
 /*----------------------------------------------------------------------------*/
 /*                                                                            */
 /*    Module:       main.cpp                                                  */
-/*    Author:       victoriang                                                */
-/*    Created:      Wed Aug 19 2020                                           */
+/*    Author:       C:\Users\lukec                                            */
+/*    Created:      Tue Nov 03 2020                                           */
 /*    Description:  V5 project                                                */
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
@@ -10,155 +11,108 @@
 // ---- START VEXCODE CONFIGURED DEVICES ----
 // Robot Configuration:
 // [Name]               [Type]        [Port(s)]
-// inertia              inertial      10              
-// vertencoder          rotation      11              
-// strafeencoder        rotation      12              
-// leftfront            motor         1               
-// leftback             motor         2               
-// rightfront           motor         3               
-// rightback            motor         4               
+// leftfront            motor         13              
+// leftback             motor         8               
+// rightfront           motor         5               
+// rightback            motor         12              
+// inertia              inertial      7               
+// vertencoder          encoder       A, B            
+// strafeencoder        encoder       C, D            
 // ---- END VEXCODE CONFIGURED DEVICES ----
 
 #include "vex.h"
 
 using namespace vex;
 
-int currentTask;
+int xPos = 0;
+int yPos = 0;
+int yawValue = 0;
+int yG = 0;
+int xG = 0;
 
-void display()
-{
-  while(true)
-  {
+bool moving = false;
+
+void display() {
+  while(true) {
     Brain.Screen.setCursor(1, 1);
-    Brain.Screen.print("Inertial %f", inertia.rotation(degrees));
+    Brain.Screen.print("Vertencoder: %f", vertencoder.position(degrees));
 
     Brain.Screen.setCursor(2, 1);
-    Brain.Screen.print("Vert Encoder %f", vertencoder.position(degrees));
+    Brain.Screen.print("Strafeencoder: %f", strafeencoder.position(degrees));
 
     Brain.Screen.setCursor(3, 1);
-    Brain.Screen.print("Strafe Encoder %f", strafeencoder.position(degrees));
+    Brain.Screen.print("Is moving: %f", moving);
+
+    Brain.Screen.setCursor(4, 1);
+    Brain.Screen.print("yG: %d", yG);
+
+    Brain.Screen.setCursor(5, 1);
+    Brain.Screen.print("xG: %d", xG);
+
+    wait(15, msec);
+    Brain.Screen.clearScreen();
+
   }
 }
 
-bool isTaskDone(int taskNum) {
-  return taskNum == currentTask;
-}
+void moveTo(int x, int y, float speed) {
+  moving = true;
 
-void waitTaskFinished(int taskNum) {
-  if(!isTaskDone(taskNum)) {
-    waitTaskFinished(taskNum);
-  }
-  else {
-    currentTask++;
-  }
-}
+  //calculating motor speeds and direction
+  double yawModifier = 2; //this is for the inertial sensor not giving the right numbers to be fed into the system (depending on the position of the inertial sensor on the robot)
 
-void forwardsdrive(int distancetotravel, int taskNum)
-{
-  waitTaskFinished(taskNum);
-  //distanceleft = distancetotravel; 
+  double xValue = cos(yawValue / yawModifier) + (x - xPos);
+  double yValue = sin(yawValue / yawModifier) + (y - yPos);
 
-  leftfront.setVelocity(40, vex::velocityUnits::pct);
-  leftback.setVelocity(40, vex::velocityUnits::pct);
-  rightfront.setVelocity(40, vex::velocityUnits::pct);
-  rightback.setVelocity(40, vex::velocityUnits::pct);
 
-  vertencoder.setPosition(0,degrees);
-  while(vertencoder.position(degrees) < distancetotravel)
-  {
+  xValue /= 100;
+  yValue /= 100;
+    
+  //applying those values to the motors
+  double frontLeft = (double)((yValue + xValue) * speed);
+  double backLeft = (double)((yValue - xValue) * speed);
+  double frontRight = (double)((yValue - xValue) * speed);
+  double backRight = (double)((yValue + xValue) * speed);
+
+
+  vertencoder.setPosition(0, degrees);
+  strafeencoder.setPosition(0, degrees);
+
+  leftfront.setVelocity(frontLeft, vex::velocityUnits::pct);
+  leftback.setVelocity(backLeft, vex::velocityUnits::pct);
+  rightfront.setVelocity(frontRight, vex::velocityUnits::pct);
+  rightback.setVelocity(backRight, vex::velocityUnits::pct);
+
+  int startPosX = xPos;
+  int startPosY = yPos;
+
+  while(!(abs(x-xPos) < 2 && abs(y-yPos) < 2)) {
+
+    yG = abs(y-yPos);
+    xG = abs(x-xPos);
+    
     leftfront.spin(forward);
     leftback.spin(forward);
     rightfront.spin(forward);
     rightback.spin(forward);
+
+    yPos = strafeencoder.position(degrees) + startPosY;
+    xPos = vertencoder.position(degrees) + startPosX;
+
   }
+
+  yPos = strafeencoder.position(degrees) + startPosY;
+  xPos = vertencoder.position(degrees) + startPosX;
 
   leftfront.stop();
   leftback.stop();
   rightfront.stop();
   rightback.stop();
-
-  wait (1,seconds);
+  moving = false;
 }
 
-void backwardsdrive(double distancetotravel, int taskNum)
+void rightinertialturn(double goaldegrees)
 {
-  waitTaskFinished(taskNum);
-
-  leftfront.setVelocity(40, vex::velocityUnits::pct);
-  leftback.setVelocity(40, vex::velocityUnits::pct);
-  rightfront.setVelocity(40, vex::velocityUnits::pct);
-  rightback.setVelocity(40, vex::velocityUnits::pct);
-  
-  vertencoder.setPosition(0,degrees);
-  while(vertencoder.position(degrees)>distancetotravel)
-  {
-    leftfront.spin(reverse);
-    leftback.spin(reverse);
-    rightfront.spin(reverse);
-    rightback.spin(reverse);
-  }
-  
-  leftfront.stop();
-  leftback.stop();
-  rightfront.stop();
-  rightback.stop();
-  wait (1,seconds);
-}
-
-void leftstrafe(double distancetotravel, int taskNum)
-{
-  waitTaskFinished(taskNum);
-
-  strafeencoder.setPosition(0,degrees);
-  leftfront.setVelocity(40, vex::velocityUnits::pct);
-  leftback.setVelocity(40, vex::velocityUnits::pct);
-  rightfront.setVelocity(40, vex::velocityUnits::pct);
-  rightback.setVelocity(40, vex::velocityUnits::pct);
-
-  strafeencoder.setPosition(0,degrees);
-  while(strafeencoder.position(degrees)<distancetotravel)
-  {
-    leftfront.spin(reverse);
-    leftback.spin(forward);
-    rightfront.spin(forward);
-    rightback.spin(reverse);
-  }
-
-  leftfront.stop();
-  leftback.stop();
-  rightfront.stop();
-  rightback.stop();
-  wait (1,seconds);
-}
-
-void rightstrafe(double distancetotravel, int taskNum)
-{
-  waitTaskFinished(taskNum);
-
-  strafeencoder.setPosition(0,degrees);
-  leftfront.setVelocity(40, vex::velocityUnits::pct);
-  leftback.setVelocity(40, vex::velocityUnits::pct);
-  rightfront.setVelocity(40, vex::velocityUnits::pct);
-  rightback.setVelocity(40, vex::velocityUnits::pct);
-  
-  strafeencoder.setPosition(0,degrees);
-  while(strafeencoder.position(degrees)>distancetotravel)
-  {
-    leftfront.spin(forward);
-    leftback.spin(reverse);
-    rightfront.spin(reverse);
-    rightback.spin(forward);
-  }
-  leftfront.stop();
-  leftback.stop();
-  rightfront.stop();
-  rightback.stop();
-  wait (1,seconds);
-}
-
-void rightinertialturn(double goaldegrees, int taskNum)
-{
-  waitTaskFinished(taskNum);
 
   inertia.calibrate();
   while (inertia.isCalibrating()) {
@@ -169,7 +123,7 @@ void rightinertialturn(double goaldegrees, int taskNum)
   leftback.setVelocity(40, vex::velocityUnits::pct);
   rightfront.setVelocity(40, vex::velocityUnits::pct);
   rightback.setVelocity(40, vex::velocityUnits::pct);
-    
+  
   while(inertia.rotation(degrees) < goaldegrees)
   {
     leftfront.spin(forward);
@@ -177,6 +131,8 @@ void rightinertialturn(double goaldegrees, int taskNum)
     rightfront.spin(reverse);
     rightback.spin(reverse);
   }
+
+  yawValue += inertia.rotation(degrees); //position tracking
 
   leftfront.stop();
   leftback.stop();
@@ -186,10 +142,8 @@ void rightinertialturn(double goaldegrees, int taskNum)
   wait (1,seconds);
 }
 
-void leftinertialturn(double goaldegrees, int taskNum)
+void leftinertialturn(double goaldegrees)
 {
-  waitTaskFinished(taskNum);
-
   inertia.calibrate();
   while (inertia.isCalibrating()) {
     wait(.3, seconds);
@@ -208,6 +162,8 @@ void leftinertialturn(double goaldegrees, int taskNum)
     rightback.spin(forward);
   }
 
+  yawValue += inertia.rotation(degrees); //position tracking
+
   leftfront.stop();
   leftback.stop();
   rightfront.stop();
@@ -216,43 +172,13 @@ void leftinertialturn(double goaldegrees, int taskNum)
   wait (1,seconds);
 }
 
-/*void intake()
-{
-  rightintake.setVelocity(100, vex::velocityUnits::pct);
-  leftintake.setVelocity(100, vex::velocityUnits::pct);
-
-  rightintake.spin(forward);
-  leftintake.spin(forward);
-}
-
-void outtake(){
-  rightintake.setVelocity(50, vex::velocityUnits::pct);
-  leftintake.setVelocity(50, vex::velocityUnits::pct);
-
-  leftintake.rotateFor(vex::directionType::fwd,1,vex::rotationUnits::rev,false);
-  rightintake.rotateFor(vex::directionType::rev,1,vex::rotationUnits::rev,true);
-
-  rightintake.stop();
-  leftintake.stop();
-
-  wait (3,seconds);
-}*/
-
 int main() {
+  // Initializing Robot Configuration. DO NOT REMOVE!
   vexcodeInit();
-
-  wait (2, seconds);
   thread t(display);
 
-  currentTask = 0;
-
-  leftstrafe(600, 0);
-  rightinertialturn(5, 1);
-  forwardsdrive(900, 2);
-  backwardsdrive(-50, 3);
-  leftinertialturn(-195, 4);
-  rightstrafe(-1150, 5);
-  rightinertialturn(110, 6);
-  forwardsdrive(160, 7);
-  leftinertialturn(-100, 8);
+  wait(3, seconds);
+  moveTo(0,100,20);
+  wait(2, seconds);
+  moveTo(100, 100, 20);
 }
