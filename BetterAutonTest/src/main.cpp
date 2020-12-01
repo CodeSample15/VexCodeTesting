@@ -11,13 +11,13 @@
 // ---- START VEXCODE CONFIGURED DEVICES ----
 // Robot Configuration:
 // [Name]               [Type]        [Port(s)]
-// leftfront            motor         13              
-// leftback             motor         8               
-// rightfront           motor         7               
-// rightback            motor         12              
-// inertia              inertial      9               
-// vertencoder          encoder       A, B            
-// strafeencoder        encoder       C, D            
+// leftfront            motor         20              
+// leftback             motor         13              
+// rightfront           motor         14              
+// rightback            motor         18              
+// inertia              inertial      10              
+// strafeencoder        encoder       E, F            
+// vertencoder          encoder       C, D            
 // ---- END VEXCODE CONFIGURED DEVICES ----
 
 #include "vex.h"
@@ -44,10 +44,10 @@ void display() {
     Brain.Screen.print("Is moving: %f", moving);
 
     Brain.Screen.setCursor(4, 1);
-    Brain.Screen.print("yG: %d", yG);
+    Brain.Screen.print("Y Position: %d", yG);
 
     Brain.Screen.setCursor(5, 1);
-    Brain.Screen.print("xG: %d", xG);
+    Brain.Screen.print("X Position: %d", xG);
 
     wait(15, msec);
     Brain.Screen.clearScreen();
@@ -55,8 +55,11 @@ void display() {
   }
 }
 
-float sig(float x) {
-  return (float)1 / 1 + exp(-x);
+float distanceXY(int x, int y, int x2, int y2) {
+  float dx = x - x2;
+  float dy = y - y2;
+
+  return sqrt(dx*dx + dy*dy);
 }
 
 void moveTo(int x, int y, float speed) {
@@ -71,7 +74,9 @@ void moveTo(int x, int y, float speed) {
   int startPosX = xPos;
   int startPosY = yPos;
 
-  while(!(abs(x-xPos + startPosX) < 10 && abs(y-yPos + startPosY) < 10)) {
+  float originalSpeed = speed;
+
+  while(!(abs(x-xPos) < 7 && abs(y-yPos) < 7)) {
     double xValue = cos(yawValue / yawModifier) + (x - xPos);
     double yValue = sin(yawValue / yawModifier) + (y - yPos);
 
@@ -87,13 +92,20 @@ void moveTo(int x, int y, float speed) {
     double frontRight = (double)((yValue - xValue));
     double backRight = (double)((yValue + xValue));
 
+    if(distanceXY(xPos, yPos, x, y) <= 30) {
+      speed = originalSpeed / 5;
+    }
+    else {
+      speed = originalSpeed;
+    }
+
     leftfront.setVelocity(frontLeft * speed, vex::velocityUnits::pct);
     leftback.setVelocity(backLeft * speed, vex::velocityUnits::pct);
     rightfront.setVelocity(frontRight * speed, vex::velocityUnits::pct);
     rightback.setVelocity(backRight * speed, vex::velocityUnits::pct);
 
-    yG = abs(y-yPos + startPosY);
-    xG = abs(x-xPos + startPosX);
+    yG = yPos;
+    xG = xPos;
     
     leftfront.spin(forward);
     leftback.spin(forward);
@@ -105,11 +117,8 @@ void moveTo(int x, int y, float speed) {
 
   }
 
-  yPos = strafeencoder.position(degrees) - startPosY;
-  xPos = vertencoder.position(degrees) + startPosX;
-
-  strafeencoder.setPosition(0, degrees);
-  vertencoder.setPosition(0, degrees);
+  xPos = x;
+  yPos = -y;
 
   leftfront.stop();
   leftback.stop();
@@ -185,11 +194,13 @@ int main() {
   thread t(display);
 
   wait(3, seconds);
-  moveTo(0,700,20);
+  moveTo(0,2100,90);
   wait(2, seconds);
-  moveTo(-200, 100, 20);
+  moveTo(-2000, 2100, 60);
   wait(1, seconds);
-  //leftinertialturn(90);
-  wait(3, seconds);
-  moveTo(0, 0, 20);
+  moveTo(-2000, 500, 40);
+  wait(1, seconds);
+  moveTo(-1000, 1000, 50);
+  wait(1, seconds);
+  moveTo(0, 0, 30);
 }
