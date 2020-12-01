@@ -49,6 +49,9 @@ void display() {
     Brain.Screen.setCursor(5, 1);
     Brain.Screen.print("X Position: %d", xG);
 
+    Brain.Screen.setCursor(6, 1);
+    Brain.Screen.print("Yaw Value: %d", yawValue);
+
     wait(15, msec);
     Brain.Screen.clearScreen();
 
@@ -92,8 +95,8 @@ void moveTo(int x, int y, float speed) {
     double frontRight = (double)((yValue - xValue));
     double backRight = (double)((yValue + xValue));
 
-    if(distanceXY(xPos, yPos, x, y) <= 30) {
-      speed = originalSpeed / 5;
+    if(distanceXY(xPos, yPos, x, y) <= 500) {
+      speed = originalSpeed / 4;
     }
     else {
       speed = originalSpeed;
@@ -114,7 +117,7 @@ void moveTo(int x, int y, float speed) {
 
     yPos = strafeencoder.position(degrees) - startPosY;
     xPos = vertencoder.position(degrees) + startPosX;
-
+    yawValue = inertia.rotation(degrees);
   }
 
   xPos = x;
@@ -194,11 +197,11 @@ int main() {
   thread t(display);
 
   wait(3, seconds);
-  moveTo(0,2100,90);
+  moveTo(0,3100,50);
   wait(2, seconds);
-  moveTo(-2000, 2100, 60);
+  moveTo(-3000, 3100, 40);
   wait(1, seconds);
-  moveTo(-2000, 500, 40);
+  moveTo(-2000, 200, 40);
   wait(1, seconds);
   moveTo(-1000, 1000, 50);
   wait(1, seconds);
