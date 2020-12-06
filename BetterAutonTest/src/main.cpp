@@ -52,6 +52,9 @@ void display() {
     Brain.Screen.setCursor(6, 1);
     Brain.Screen.print("Yaw Value: %d", yawValue);
 
+    Brain.Screen.setCursor(7, 1);
+    Brain.Screen.print("Test: %f", cos(yawValue * (3.14159/180)));
+
     wait(15, msec);
     Brain.Screen.clearScreen();
 
@@ -79,9 +82,14 @@ void moveTo(int x, int y, float speed) {
 
   float originalSpeed = speed;
 
+  float multiplier = 3.14159/180;
+
+  x /= cos(yawValue / multiplier);
+  y *= -sin(yawValue / multiplier);
+  
   while(!(abs(x-xPos) < 7 && abs(y-yPos) < 7)) {
-    double xValue = cos(yawValue / yawModifier) + (x - xPos);
-    double yValue = sin(yawValue / yawModifier) + (y - yPos);
+    double xValue = (x - xPos);
+    double yValue = (y - yPos);
 
     //Normalizing the vector
     float length = sqrt(xValue * xValue + yValue * yValue);
@@ -95,7 +103,7 @@ void moveTo(int x, int y, float speed) {
     double frontRight = (double)((yValue - xValue));
     double backRight = (double)((yValue + xValue));
 
-    if(distanceXY(xPos, yPos, x, y) <= 500) {
+    if(distanceXY(xPos, yPos, x, y) <= 400) {
       speed = originalSpeed / 4;
     }
     else {
@@ -107,17 +115,16 @@ void moveTo(int x, int y, float speed) {
     rightfront.setVelocity(frontRight * speed, vex::velocityUnits::pct);
     rightback.setVelocity(backRight * speed, vex::velocityUnits::pct);
 
-    yG = yPos;
-    xG = xPos;
+    yG = abs(y-yPos);
+    xG = abs(x-xPos);
     
     leftfront.spin(forward);
     leftback.spin(forward);
     rightfront.spin(forward);
     rightback.spin(forward);
 
-    yPos = strafeencoder.position(degrees) - startPosY;
-    xPos = vertencoder.position(degrees) + startPosX;
-    yawValue = inertia.rotation(degrees);
+    yPos = (sin(yawValue * multiplier) / strafeencoder.position(degrees)) - startPosY;
+    xPos = (cos(yawValue * multiplier) / vertencoder.position(degrees)) + startPosX;
   }
 
   xPos = x;
@@ -138,10 +145,10 @@ void rightinertialturn(double goaldegrees)
     wait(.3, seconds);
   }
 
-  leftfront.setVelocity(40, vex::velocityUnits::pct);
-  leftback.setVelocity(40, vex::velocityUnits::pct);
-  rightfront.setVelocity(40, vex::velocityUnits::pct);
-  rightback.setVelocity(40, vex::velocityUnits::pct);
+  leftfront.setVelocity(20, vex::velocityUnits::pct);
+  leftback.setVelocity(20, vex::velocityUnits::pct);
+  rightfront.setVelocity(20, vex::velocityUnits::pct);
+  rightback.setVelocity(20, vex::velocityUnits::pct);
   
   while(inertia.rotation(degrees) < goaldegrees)
   {
@@ -151,7 +158,7 @@ void rightinertialturn(double goaldegrees)
     rightback.spin(reverse);
   }
 
-  yawValue += inertia.rotation(degrees); //position tracking
+  yawValue += goaldegrees; //position tracking
 
   leftfront.stop();
   leftback.stop();
@@ -163,15 +170,16 @@ void rightinertialturn(double goaldegrees)
 
 void leftinertialturn(double goaldegrees)
 {
+  goaldegrees *= -1;
   inertia.calibrate();
   while (inertia.isCalibrating()) {
     wait(.3, seconds);
   }
 
-  leftfront.setVelocity(40, vex::velocityUnits::pct);
-  leftback.setVelocity(40, vex::velocityUnits::pct);
-  rightfront.setVelocity(40, vex::velocityUnits::pct);
-  rightback.setVelocity(40, vex::velocityUnits::pct);
+  leftfront.setVelocity(20, vex::velocityUnits::pct);
+  leftback.setVelocity(20, vex::velocityUnits::pct);
+  rightfront.setVelocity(20, vex::velocityUnits::pct);
+  rightback.setVelocity(20, vex::velocityUnits::pct);
 
   while(inertia.rotation(degrees) > goaldegrees)
   {
@@ -181,7 +189,7 @@ void leftinertialturn(double goaldegrees)
     rightback.spin(forward);
   }
 
-  yawValue += inertia.rotation(degrees); //position tracking
+  yawValue += goaldegrees; //position tracking
 
   leftfront.stop();
   leftback.stop();
@@ -198,6 +206,8 @@ int main() {
 
   wait(3, seconds);
   moveTo(0,3100,50);
+  wait(1, seconds);
+  leftinertialturn(90);
   wait(2, seconds);
   moveTo(-3000, 3100, 40);
   wait(1, seconds);
