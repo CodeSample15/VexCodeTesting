@@ -68,14 +68,14 @@ float distanceXY(int x, int y, int x2, int y2) {
 
 void moveTo(int x, int y, float speed) {
   //converting rotation from degrees to radians
-  double degree = ((yawValue-180) * (3.145926/180));
+  double degree = ((yawValue) * (3.145926/180));
 
-  int centerx = x - xPos;
-  int centery = y - yPos;
+  int centerx = xPos;
+  int centery = yPos;
 
   //rotate the x y desired location
-  x = cos(degree) * (x - centerx) - sin(degree) * (y-centery) + centerx;
-  y = sin(degree) * (x-centerx) + cos(degree) * (y-centery) + centery;
+  x = round(cos(degree) * (x - centerx) - sin(degree) * (y-centery) + centerx);
+  y = round(sin(degree) * (x-centerx) + cos(degree) * (y-centery) + centery);
 
   // translate point back to origin:
   xG = x;
