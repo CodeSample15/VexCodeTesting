@@ -68,7 +68,7 @@ float distanceXY(int x, int y, int x2, int y2) {
 
 void moveTo(int x, int y, float speed) {
   //converting rotation from degrees to radians
-  double degree = (yawValue * (3.145926/180));
+  double degree = ((yawValue-180) * (3.145926/180));
 
   int centerx = x - xPos;
   int centery = y - yPos;
@@ -191,7 +191,7 @@ void leftinertialturn(double goaldegrees)
     rightback.spin(forward);
   }
 
-  yawValue -= inertia.rotation(degrees); //position tracking
+  yawValue += inertia.rotation(degrees); //position tracking
 
   leftfront.stop();
   leftback.stop();
