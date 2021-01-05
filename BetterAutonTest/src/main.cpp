@@ -28,6 +28,8 @@ int yPos = 0;
 int yawValue = 0;
 int yG = 0;
 int xG = 0;
+int xposG = 0;
+int yposG = 0;
 
 bool moving = false;
 
@@ -43,13 +45,19 @@ void display() {
     Brain.Screen.print("Is moving: %f", moving);
 
     Brain.Screen.setCursor(4, 1);
-    Brain.Screen.print("Y Position: %d", yG);
+    Brain.Screen.print("Next Y Position: %d", yG);
 
     Brain.Screen.setCursor(5, 1);
-    Brain.Screen.print("X Position: %d", xG);
+    Brain.Screen.print("Next X Position: %d", xG);
 
     Brain.Screen.setCursor(6, 1);
     Brain.Screen.print("Yaw Value: %d", yawValue);
+
+    Brain.Screen.setCursor(7, 1);
+    Brain.Screen.print("X Position: %d", xposG);
+
+    Brain.Screen.setCursor(8, 1);
+    Brain.Screen.print("Y Position: %d", yposG);
 
     wait(15, msec);
     Brain.Screen.clearScreen();
@@ -64,8 +72,6 @@ float distanceXY(int x, int y, int x2, int y2) {
   return sqrt(dx*dx + dy*dy);
 }
 
-
-
 void moveTo(int x, int y, float speed) {
   //converting rotation from degrees to radians
   double degree = ((yawValue) * (3.145926/180));
@@ -74,15 +80,15 @@ void moveTo(int x, int y, float speed) {
   int centery = yPos;
 
   //rotate the x y desired location
-  x = round(cos(degree) * (((x - centerx) - sin(degree)) * ((y-centery) + centerx)));
-  y = round(sin(degree) * (((x-centerx) + cos(degree)) * ((y-centery) + centery)));
+  x = cos(degree) * (x - centerx) - sin(degree) * (y-centery) + centerx;
+  y = sin(degree) * (x-centerx) + cos(degree) * (y-centery) + centery;
 
-  //setting global variables for debugging
-  xG = x;
+  // translate point back to origin:
+  xG = x;  
   yG = y;
 
   moving = true;
-
+  
   //calculating motor speeds and direction
   vertencoder.setPosition(0, degrees);
   strafeencoder.setPosition(0, degrees);
@@ -127,6 +133,9 @@ void moveTo(int x, int y, float speed) {
 
     yPos = strafeencoder.position(degrees) - startPosY;
     xPos = vertencoder.position(degrees) + startPosX;
+
+    xposG = xPos;
+    yposG = yPos;
   }
 
   xPos = x;
@@ -159,7 +168,7 @@ void rightinertialturn(double goaldegrees)
     rightback.spin(reverse);
   }
 
-  yawValue += inertia.rotation(degrees); //position tracking
+  yawValue += goaldegrees; //position tracking
 
   leftfront.stop();
   leftback.stop();
@@ -191,7 +200,7 @@ void leftinertialturn(double goaldegrees)
     rightback.spin(forward);
   }
 
-  yawValue += inertia.rotation(degrees); //position tracking
+  yawValue -= goaldegrees; //position tracking
 
   leftfront.stop();
   leftback.stop();
