@@ -80,8 +80,8 @@ void moveTo(int x, int y, float speed) {
   int centery = yPos;
 
   //rotate the x y desired location
-  x = cos(degree) * (x - centerx) - sin(degree) * (y-centery) + centerx;
-  y = sin(degree) * (x-centerx) + cos(degree) * (y-centery) + centery;
+  x = (cos(degree) * (x - centerx)) - (sin(degree) * (y-centery)) + centerx;
+  y = (sin(degree) * (x-centery)) + (cos(degree) * (y-centery)) + centery;
 
   // translate point back to origin:
   xG = x;  
@@ -168,7 +168,7 @@ void rightinertialturn(double goaldegrees)
     rightback.spin(reverse);
   }
 
-  yawValue += goaldegrees; //position tracking
+  yawValue += inertia.rotation(degrees); //position tracking
 
   leftfront.stop();
   leftback.stop();
@@ -200,7 +200,7 @@ void leftinertialturn(double goaldegrees)
     rightback.spin(forward);
   }
 
-  yawValue -= goaldegrees; //position tracking
+  yawValue -= inertia.rotation(degrees); //position tracking
 
   leftfront.stop();
   leftback.stop();
