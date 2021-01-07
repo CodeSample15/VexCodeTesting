@@ -83,8 +83,8 @@ void moveTo(int x, int y, float speed) {
   int tempY = y;
 
   //rotate the x y desired location
-  x = cos(degree) * (tempX - centerx) - sin(degree) * (tempY - centery) + centerx;
-  y = sin(degree) * (tempX - centery) + cos(degree) * (tempY - centery) + centery;
+  x = round(cos(degree) * (tempX - centerx) - sin(degree) * (tempY - centery) + centerx);
+  y = round(sin(degree) * (tempX - centery) + cos(degree) * (tempY - centery) + centery);
 
   // translate point back to origin:
   xG = x;  
