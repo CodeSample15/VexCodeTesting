@@ -141,8 +141,8 @@ void moveTo(int x, int y, float speed) {
     yposG = yPos;
   }
 
-  xPos = x;
-  yPos = -y;
+  xPos = vertencoder.position(degrees) + startPosX;
+  yPos = strafeencoder.position(degrees) - startPosY;
 
   leftfront.stop();
   leftback.stop();
