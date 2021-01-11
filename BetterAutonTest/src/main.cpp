@@ -33,6 +33,11 @@ int yposG = 0;
 int debugX = 0;
 int debugY = 0;
 
+//for turning and keeping alignment
+int lastYaw_X = 0;
+int lastYaw_Y = 0;
+int lastYawChange = 0;
+
 bool moving = false;
 
 void display() {
@@ -84,11 +89,22 @@ void moveTo(int x, int y, float speed) {
   vertencoder.setPosition(0, degrees);
   strafeencoder.setPosition(0, degrees);
 
-  //converting rotation from degrees to radians
-  double degree = ((yawValue) * (3.145926/180));
-
+  //finding out how this point should be rotated based off of the last point to have a rotation
   int centerx = xPos;
   int centery = yPos;
+
+  if(yawValue != lastYawChange) {
+    lastYaw_X = xPos;
+    lastYaw_Y = yPos;
+    lastYawChange = yawValue;
+  }
+  else {
+    centerx = lastYaw_X;
+    centery = lastYaw_Y;
+  }
+
+  //converting rotation from degrees to radians
+  double degree = ((yawValue) * (3.145926/180));
   
   int tempX = x;
   int tempY = y;
@@ -214,7 +230,7 @@ void leftinertialturn(double goaldegrees)
     rightback.spin(forward);
   }
 
-  yawValue += inertia.rotation(degrees); //position tracking
+  yawValue += goaldegrees; //position tracking
 
   leftfront.stop();
   leftback.stop();
