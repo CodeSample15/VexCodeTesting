@@ -32,6 +32,7 @@ int xposG = 0;
 int yposG = 0;
 int debugX = 0;
 int debugY = 0;
+bool next = false;
 
 //for turning and keeping alignment
 int lastYaw_X = 0;
@@ -93,25 +94,35 @@ void moveTo(int x, int y, float speed) {
   int centerx = xPos;
   int centery = yPos;
 
-  if(yawValue != lastYawChange) {
+/*
+int lastYaw_X = 0;
+int lastYaw_Y = 0;
+int lastYawChange = 0;
+*/
+
+/*
+  if(lastYawChange != yawValue){
+    //if it's yaw position changed
     lastYaw_X = xPos;
     lastYaw_Y = yPos;
-    lastYawChange = yawValue;
+    lastYawChange = yawValue; //setting a new rotational value for the program to compare the next time it moves
   }
   else {
+    //if the robot did not rotate within its last movement, the program will set the point to rotate the next x y around to the last time the robot rotated
     centerx = lastYaw_X;
     centery = lastYaw_Y;
   }
+  */
 
   //converting rotation from degrees to radians
   double degree = ((yawValue) * (3.145926/180));
-  
+
   int tempX = x;
   int tempY = y;
 
   //rotate the x y desired location
-  x = round(cos(degree) * (tempX - centerx) - sin(degree) * (tempY - centery) + centerx);
-  y = round(sin(degree) * (tempX - centery) + cos(degree) * (tempY - centery) + centery);
+  x = round(cos(degree) * (tempX - centerx) - sin(degree) * (tempY - centery));
+  y = round(sin(degree) * (tempX - centery) + cos(degree) * (tempY - centery));
 
   xG = x;  
   yG = y;
@@ -167,8 +178,8 @@ void moveTo(int x, int y, float speed) {
     yposG = yPos;
   }
 
-  xPos = tempX;
-  yPos = tempY;
+  xPos = x;
+  yPos = y;
 
   leftfront.stop();
   leftback.stop();
