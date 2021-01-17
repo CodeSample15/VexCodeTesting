@@ -32,14 +32,19 @@ int xposG = 0;
 int yposG = 0;
 int debugX = 0;
 int debugY = 0;
-bool next = false;
-
-//for turning and keeping alignment
-int lastYaw_X = 0;
-int lastYaw_Y = 0;
-int lastYawChange = 0;
 
 bool moving = false;
+
+int positions[5][2] = 
+{
+  {0, 3100},
+  {-3000, 3100},
+  {-2000, 200},
+  {-1000, 1000},
+  {0, 0}
+};
+
+int rotatedPoints[5][2];
 
 void display() {
   while(true) {
@@ -79,6 +84,28 @@ void display() {
   }
 }
 
+void rotate(int degree, int cx, int cy) {
+  int arraySize = sizeof(rotatedPoints) / sizeof(rotatedPoints[0]);
+  double degrees = ((degree) * (3.145926/180));
+
+  for(int i=0; i<arraySize; i++) {
+      int x = positions[i][0];
+      int y = positions[i][1];
+
+      rotatedPoints[i][0] = round(cos(degrees) * (x - cx) - sin(degrees) * (y - cy) + cx);
+      rotatedPoints[i][1] = round(sin(degrees) * (x - cx) + cos(degrees) * (y - cy) + cy);
+    }
+}
+
+void initRotations() {
+  int arraySize = sizeof(rotatedPoints) / sizeof(rotatedPoints[0]);
+
+  for(int i=0; i<arraySize; i++){
+    rotatedPoints[i][0] = positions[i][0];
+    rotatedPoints[i][1] = positions[i][1];
+  }
+}
+
 float distanceXY(int x, int y, int x2, int y2) {
   float dx = x - x2;
   float dy = y - y2;
@@ -86,43 +113,13 @@ float distanceXY(int x, int y, int x2, int y2) {
   return sqrt(dx*dx + dy*dy);
 }
 
-void moveTo(int x, int y, float speed) {
+void moveTo(int posIndex, float speed) {
+  //resetting the encoders
   vertencoder.setPosition(0, degrees);
   strafeencoder.setPosition(0, degrees);
 
-  //finding out how this point should be rotated based off of the last point to have a rotation
-  int centerx = xPos;
-  int centery = yPos;
-
-/*
-int lastYaw_X = 0;
-int lastYaw_Y = 0;
-int lastYawChange = 0;
-*/
-
-/*
-  if(lastYawChange != yawValue){
-    //if it's yaw position changed
-    lastYaw_X = xPos;
-    lastYaw_Y = yPos;
-    lastYawChange = yawValue; //setting a new rotational value for the program to compare the next time it moves
-  }
-  else {
-    //if the robot did not rotate within its last movement, the program will set the point to rotate the next x y around to the last time the robot rotated
-    centerx = lastYaw_X;
-    centery = lastYaw_Y;
-  }
-  */
-
-  //converting rotation from degrees to radians
-  double degree = ((yawValue) * (3.145926/180));
-
-  int tempX = x;
-  int tempY = y;
-
-  //rotate the x y desired location
-  x = round(cos(degree) * (tempX - centerx) - sin(degree) * (tempY - centery));
-  y = round(sin(degree) * (tempX - centery) + cos(degree) * (tempY - centery));
+  int x = rotatedPoints[posIndex][0];
+  int y = rotatedPoints[posIndex][1];
 
   xG = x;  
   yG = y;
@@ -178,8 +175,8 @@ int lastYawChange = 0;
     yposG = yPos;
   }
 
-  xPos = x;
-  yPos = y;
+  xPos = positions[posIndex][0];
+  yPos = positions[posIndex][1];
 
   leftfront.stop();
   leftback.stop();
@@ -209,7 +206,7 @@ void rightinertialturn(double goaldegrees)
   }
 
 
-  yawValue += goaldegrees; //position tracking
+  rotate(goaldegrees, xPos, yPos);
 
   leftfront.stop();
   leftback.stop();
@@ -241,7 +238,7 @@ void leftinertialturn(double goaldegrees)
     rightback.spin(forward);
   }
 
-  yawValue += goaldegrees; //position tracking
+  rotate(goaldegrees, xPos, yPos); //position tracking
 
   leftfront.stop();
   leftback.stop();
@@ -254,18 +251,19 @@ void leftinertialturn(double goaldegrees)
 int main() {
   // Initializing Robot Configuration. DO NOT REMOVE!
   vexcodeInit();
+  initRotations();
   thread t(display);
 
   wait(3, seconds);
-  moveTo(0,3100,50);
+  moveTo(0 ,50);
   wait(1, seconds);
   rightinertialturn(90);
   wait(2, seconds);
-  moveTo(-3000, 3100, 40);
+  moveTo(1, 40);
   wait(1, seconds);
-  moveTo(-2000, 200, 40);
+  moveTo(2, 40);
   wait(1, seconds);
-  moveTo(-1000, 1000, 50);
+  moveTo(3, 50);
   wait(1, seconds);
-  moveTo(0, 0, 30);
+  moveTo(4, 30);
 }
