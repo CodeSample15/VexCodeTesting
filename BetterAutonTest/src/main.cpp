@@ -35,7 +35,7 @@ int debugY = 0;
 
 bool moving = false;
 
-int positions[5][2] = 
+const int positions[5][2] = 
 {
   {0, 3100},
   {-3000, 3100},
@@ -86,6 +86,7 @@ void display() {
 
 void rotate(int degree, int cx, int cy) {
   int arraySize = sizeof(rotatedPoints) / sizeof(rotatedPoints[0]);
+
   double degrees = ((degree) * (3.145926/180));
 
   for(int i=0; i<arraySize; i++) {
@@ -98,7 +99,7 @@ void rotate(int degree, int cx, int cy) {
 }
 
 void initRotations() {
-  int arraySize = sizeof(rotatedPoints) / sizeof(rotatedPoints[0]);
+  int arraySize = sizeof(positions) / sizeof(positions[0]);
 
   for(int i=0; i<arraySize; i++){
     rotatedPoints[i][0] = positions[i][0];
@@ -121,7 +122,7 @@ void moveTo(int posIndex, float speed) {
   int x = rotatedPoints[posIndex][0];
   int y = rotatedPoints[posIndex][1];
 
-  xG = x;  
+  xG = x;
   yG = y;
 
   moving = true;
@@ -132,9 +133,12 @@ void moveTo(int posIndex, float speed) {
 
   float originalSpeed = speed;
 
-  while(!(abs(x-xPos) < 7 && abs(y-yPos) < 7)) {
-    double xValue = (x - xPos);
-    double yValue = (y - yPos);
+  int currentX = xPos;
+  int currentY = yPos;
+
+  while(!(abs(x-currentX) < 7 && abs(y-currentY) < 7)) {
+    double xValue = (x - currentX);
+    double yValue = (y - currentY);
 
     debugX = x;
     debugY = y;
@@ -151,7 +155,7 @@ void moveTo(int posIndex, float speed) {
     double frontRight = (double)((yValue - xValue));
     double backRight = (double)((yValue + xValue));
 
-    if(distanceXY(xPos, yPos, x, y) <= 500) {
+    if(distanceXY(currentX, currentY, x, y) <= 500) {
       speed = originalSpeed / 4;
     }
     else {
@@ -168,15 +172,18 @@ void moveTo(int posIndex, float speed) {
     rightfront.spin(forward);
     rightback.spin(forward);
 
-    yPos = strafeencoder.position(degrees) - startPosY;
-    xPos = vertencoder.position(degrees) + startPosX;
+    currentX = vertencoder.position(degrees) + startPosX;
+    currentY = strafeencoder.position(degrees) + startPosY;
 
     xposG = xPos;
     yposG = yPos;
   }
 
-  xPos = positions[posIndex][0];
-  yPos = positions[posIndex][1];
+  xPos = rotatedPoints[posIndex][0];
+  yPos = rotatedPoints[posIndex][1];
+
+  xposG = xPos;
+  yposG = yPos;
 
   leftfront.stop();
   leftback.stop();
@@ -256,14 +263,14 @@ int main() {
 
   wait(3, seconds);
   moveTo(0 ,50);
-  wait(1, seconds);
+  wait(.5, seconds);
   rightinertialturn(90);
-  wait(2, seconds);
+  wait(.5, seconds);
   moveTo(1, 40);
-  wait(1, seconds);
+  wait(.5, seconds);
   moveTo(2, 40);
-  wait(1, seconds);
+  wait(.5, seconds);
   moveTo(3, 50);
-  wait(1, seconds);
+  wait(.5, seconds);
   moveTo(4, 30);
 }
